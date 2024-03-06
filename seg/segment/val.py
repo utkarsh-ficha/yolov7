@@ -352,6 +352,11 @@ def run(
         for i, c in enumerate(metrics.ap_class_index):
             LOGGER.info(pf % (names[c], seen, nt[c], *metrics.class_result(i)))
 
+    # Print results per classWhile training also
+    if training:
+        for i, c in enumerate(metrics.ap_class_index):
+            LOGGER.info(pf % (names[c], seen, nt[c], *metrics.class_result(i)))
+
     # Print speeds
     t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
     if not training:

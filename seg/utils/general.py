@@ -945,7 +945,8 @@ def print_mutation(results, hyp, save_dir, bucket, prefix=colorstr('evolve: ')):
     # Log to evolve.csv
     s = '' if evolve_csv.exists() else (('%20s,' * n % keys).rstrip(',') + '\n')  # add header
     with open(evolve_csv, 'a') as f:
-        f.write(s + ('%20.5g,' * n % vals).rstrip(',') + '\n')
+        f.write(f"{s}{','.join(f'{val:20.5g}' for val in vals[:n])}\n")
+        #f.write(str(s) + str('%20.5g,' * n % vals).rstrip(',') + '\n')
 
     # Save yaml
     with open(evolve_yaml, 'w') as f:

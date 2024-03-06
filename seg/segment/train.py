@@ -195,7 +195,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         gs,
         single_cls,
         hyp=hyp,
-        augment=True,
+        augment=False,
         cache=None if opt.cache == 'val' else opt.cache,
         rect=opt.rect,
         rank=LOCAL_RANK,
@@ -415,6 +415,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 torch.save(ckpt, last)
                 if best_fitness == fi:
                     torch.save(ckpt, best)
+                    torch.save(ckpt, w / f"best_{epoch}.pt")
                 if opt.save_period > 0 and epoch % opt.save_period == 0:
                     torch.save(ckpt, w / f'epoch_{epoch}.pt')
                     logger.log_model(w / f'epoch_{epoch}.pt')
@@ -507,11 +508,12 @@ def parse_opt(known=False):
     parser.add_argument('--quad', action='store_true', help='quad dataloader')
     parser.add_argument('--cos-lr', action='store_true', help='cosine LR scheduler')
     parser.add_argument('--label-smoothing', type=float, default=0.0, help='Label smoothing epsilon')
-    parser.add_argument('--patience', type=int, default=100, help='EarlyStopping patience (epochs without improvement)')
+    parser.add_argument('--patience', type=int, default=10, help='EarlyStopping patience (epochs without improvement)')
     parser.add_argument('--freeze', nargs='+', type=int, default=[0], help='Freeze layers: backbone=10, first3=0 1 2')
     parser.add_argument('--save-period', type=int, default=-1, help='Save checkpoint every x epochs (disabled if < 1)')
     parser.add_argument('--seed', type=int, default=0, help='Global training seed')
     parser.add_argument('--local_rank', type=int, default=-1, help='Automatic DDP Multi-GPU argument, do not modify')
+    parser.add_argument('--rpath', type=str, default="", help='Resume weights path')
 
     # Instance Segmentation Args
     parser.add_argument('--mask-ratio', type=int, default=4, help='Downsample the truth masks to saving memory')
@@ -535,7 +537,11 @@ def main(opt, callbacks=Callbacks()):
 
     # Resume
     if opt.resume and not opt.evolve:  # resume from specified or most recent last.pt
-        last = Path(check_file(opt.resume) if isinstance(opt.resume, str) else get_latest_run())
+        if opt.resume == True:
+          last = Path(check_file(opt.resume) if isinstance(opt.resume, str) else get_latest_run())
+        else:
+          last = Path(opt.rpath)
+        print("[INFO] -----------", last)
         opt_yaml = last.parent.parent / 'opt.yaml'  # train options yaml
         opt_data = opt.data  # original dataset
         if opt_yaml.is_file():
