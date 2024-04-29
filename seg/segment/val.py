@@ -30,6 +30,8 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
+import io
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
@@ -347,15 +349,28 @@ def run(
     if nt.sum() == 0:
         LOGGER.warning(f'WARNING: no labels found in {task} set, can not compute metrics without labels ⚠️')
 
-    # Print results per class
+    
+    # Print results per class And save a txt also
     if (verbose or (nc < 50 and not training)) and nc > 1 and len(stats):
-        for i, c in enumerate(metrics.ap_class_index):
-            LOGGER.info(pf % (names[c], seen, nt[c], *metrics.class_result(i)))
+        with io.open(save_dir / "best_log.txt", "w") as f:
+            f.write(s)
+            f.write("\n")
+            for i, c in enumerate(metrics.ap_class_index):
+                LOGGER.info(pf % (names[c], seen, nt[c], *metrics.class_result(i)))
+                f.write(pf % (names[c], seen, nt[c], *metrics.class_result(i)))
+                if i < len(metrics.ap_class_index):
+                    f.write("\n")
 
-    # Print results per classWhile training also
+    # Print results per class While training And save a txt also
     if training:
-        for i, c in enumerate(metrics.ap_class_index):
-            LOGGER.info(pf % (names[c], seen, nt[c], *metrics.class_result(i)))
+        with io.open(save_dir / "valid_log.txt", "w") as f:
+            f.write(s)
+            f.write("\n")
+            for i, c in enumerate(metrics.ap_class_index):
+                LOGGER.info(pf % (names[c], seen, nt[c], *metrics.class_result(i)))
+                f.write(pf % (names[c], seen, nt[c], *metrics.class_result(i)))
+                if i < len(metrics.ap_class_index):
+                    f.write("\n")
 
     # Print speeds
     t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
