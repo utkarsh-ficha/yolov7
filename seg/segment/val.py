@@ -355,6 +355,8 @@ def run(
         with io.open(save_dir / "best_log.txt", "w") as f:
             f.write(s)
             f.write("\n")
+            LOGGER.info(pf % ("all", seen, nt.sum(), *metrics.mean_results()))
+            f.write("\n")
             for i, c in enumerate(metrics.ap_class_index):
                 LOGGER.info(pf % (names[c], seen, nt[c], *metrics.class_result(i)))
                 f.write(pf % (names[c], seen, nt[c], *metrics.class_result(i)))
@@ -365,6 +367,8 @@ def run(
     if training:
         with io.open(save_dir / "valid_log.txt", "w") as f:
             f.write(s)
+            f.write("\n")
+            LOGGER.info(pf % ("all", seen, nt.sum(), *metrics.mean_results()))
             f.write("\n")
             for i, c in enumerate(metrics.ap_class_index):
                 LOGGER.info(pf % (names[c], seen, nt[c], *metrics.class_result(i)))
