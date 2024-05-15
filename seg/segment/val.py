@@ -26,6 +26,11 @@ import sys
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 
+import pandas as pd
+pd.set_option('display.width', 1000) 
+pd.set_option('display.max_columns', 20)
+pd.options.display.width = 400
+
 import numpy as np
 import torch
 from tqdm import tqdm
@@ -375,6 +380,12 @@ def run(
                 f.write(pf % (names[c], seen, nt[c], *metrics.class_result(i)))
                 if i < len(metrics.ap_class_index):
                     f.write("\n")
+
+    # Confusion Matrix
+    print("Confusion Matrix")
+    matrix_confusion_df = confusion_matrix.process_df_accuracy(names=list(names.values()))
+    matrix_confusion_df.to_csv(save_dir / "confusion_matrix.csv", index=False)
+    print(matrix_confusion_df)
 
     # Print speeds
     t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image

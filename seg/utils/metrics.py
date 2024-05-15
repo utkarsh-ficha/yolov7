@@ -7,6 +7,11 @@ import math
 import warnings
 from pathlib import Path
 
+import pandas as pd
+pd.set_option('display.width', 1000) 
+pd.set_option('display.max_columns', 20)
+pd.options.display.width = 400
+
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -185,6 +190,12 @@ class ConfusionMatrix:
         fp = self.matrix.sum(1) - tp  # false positives
         # fn = self.matrix.sum(0) - tp  # false negatives (missed detections)
         return tp[:-1], fp[:-1]  # remove background class
+    
+    def tp_fp_fn(self):
+        tp = self.matrix.diagonal()  # true positives
+        fp = self.matrix.sum(1) - tp  # false positives
+        fn = self.matrix.sum(0) - tp  # false negatives (missed detections)
+        return tp[:-1], fp[:-1], fn[:-1]  # remove background class
 
     @TryExcept('WARNING: ConfusionMatrix plot failure')
     def plot(self, normalize=True, save_dir='', names=()):
@@ -219,6 +230,46 @@ class ConfusionMatrix:
     def print(self):
         for i in range(self.nc + 1):
             print(' '.join(map(str, self.matrix[i])))
+
+    def process_df_accuracy(self, names=[]):
+        tp_, fp_, fn_ = self.tp_fp_fn()
+        matrix_confussion_data = []
+        matrix_confussion_data.append(["Class", "TP", "FP", "FN"])
+        for i in range(len(names)):
+            matrix_confussion_data.append([names[i], tp_[i], fp_[i], fn_[i]])
+        
+        df = pd.DataFrame(matrix_confussion_data[1:], columns=matrix_confussion_data[0])
+
+        # Add P and R
+        df['P'] = df['TP'] / (df['TP'] + df['FP'])
+        df['R'] = df['TP'] / (df['TP'] + df['FN'])
+
+        # Add total ROW
+        TP = df[df['Class'] != 'total']['TP'].sum()
+        FP = df[df['Class'] != 'total']['FP'].sum()
+        FN = df[df['Class'] != 'total']['FN'].sum()
+        P = TP / (TP + FP)
+        R = TP / (TP + FN)
+        df.loc[len(df.index)] = ['total', TP, FP, FN, P, R]
+
+        # Add a row without recycle_waste
+        TP = df[df['Class'] != 'total'][df['Class'] != 'recycle_waste']['TP'].sum()
+        FP = df[df['Class'] != 'total'][df['Class'] != 'recycle_waste']['FP'].sum()
+        FN = df[df['Class'] != 'total'][df['Class'] != 'recycle_waste']['FN'].sum()
+        P = TP / (TP + FP)
+        R = TP / (TP + FN)
+        # TOT = TP + FN
+        # AIW = (TOT - (FP + FN)) / TOT
+        df.loc[len(df.index)] = ['total_w_recycle', TP, FP, FN, P, R]
+
+        # Calculate Total, error, Accuracy
+        df['Total'] = df['TP'] + df['FN']
+        df['AI_W'] = 1 - ((df['FP'] + df['FN'])) / df['Total']
+        df['Acc'] = df['TP'] / ( df['Total'] + df['FP'])
+        df['error'] = df['FP'] + df['FN']
+        df['%global_error'] = df['error'] / list(df[df['Class'] == 'total']['error'])[0]
+
+        return df
 
 
 def bbox_iou(box1, box2, xywh=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7):
