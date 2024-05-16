@@ -12,6 +12,9 @@ pd.set_option('display.width', 1000)
 pd.set_option('display.max_columns', 20)
 pd.options.display.width = 400
 
+import warnings
+warnings.filterwarnings("ignore")
+
 import matplotlib.pyplot as plt
 import numpy as np
 import torch

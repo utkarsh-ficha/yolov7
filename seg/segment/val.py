@@ -382,10 +382,11 @@ def run(
                     f.write("\n")
 
     # Confusion Matrix
-    print("Confusion Matrix")
-    matrix_confusion_df = confusion_matrix.process_df_accuracy(names=list(names.values()))
-    matrix_confusion_df.to_csv(save_dir / "confusion_matrix.csv", index=False)
-    print(matrix_confusion_df)
+    if not training:
+        print("Confusion Matrix")
+        matrix_confusion_df = confusion_matrix.process_df_accuracy(names=list(names.values()))
+        matrix_confusion_df.to_csv(save_dir / "confusion_matrix.csv", index=False)
+        print(matrix_confusion_df)
 
     # Print speeds
     t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
