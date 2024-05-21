@@ -59,6 +59,7 @@ from utils.segment.metrics import Metrics, ap_per_class_box_and_mask
 from utils.segment.plots import plot_images_and_masks
 from utils.torch_utils import de_parallel, select_device, smart_inference_mode
 
+from utils.segment.general import rle2polygon
 
 def save_one_txt(predn, save_conf, shape, file):
     # Save one txt result
@@ -86,12 +87,13 @@ def save_one_json(predn, jdict, path, class_map, pred_masks):
     with ThreadPool(NUM_THREADS) as pool:
         rles = pool.map(single_encode, pred_masks)
     for i, (p, b) in enumerate(zip(predn.tolist(), box.tolist())):
+        polygons = rle2polygon(rles[i])
         jdict.append({
             'image_id': image_id,
             'category_id': class_map[int(p[5])],
             'bbox': [round(x, 3) for x in b],
             'score': round(p[4], 5),
-            'segmentation': rles[i]})
+            'segmentation': polygons})
 
 
 def process_batch(detections, labels, iouv, pred_masks=None, gt_masks=None, overlap=False, masks=False):
